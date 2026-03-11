@@ -95,6 +95,13 @@
         /* Utils */
         .code-block { background: #020617; padding: 15px; border-radius: 6px; font-family: monospace; color: #cbd5e1; margin: 10px 0; border: 1px solid #334155; }
         .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #1e3a8a; color: #93c5fd; }
+
+        /* Chat Specific */
+        #chatContainer { max-height: 500px; overflow-y: auto; padding: 10px; border: 1px solid #334155; border-radius: 12px; background: #020617; margin-top: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .msg-user { align-self: flex-end; background: #3b82f6; color: white; padding: 12px 18px; border-radius: 18px 18px 2px 18px; max-width: 80%; font-size: 14px; position: relative; }
+        .msg-user::before { content: 'YOU'; position: absolute; bottom: -18px; right: 5px; font-size: 9px; color: #64748b; font-weight: bold; }
+        .msg-ai { align-self: flex-start; width: 100%; border-radius: 12px; position: relative; }
+        #askResult { display: flex; flex-direction: column; gap: 15px; }
     </style>
 </head>
 <body>
@@ -257,7 +264,11 @@ console.log(response.summary);
             <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="btnAsk" onclick="doAsk()">Fire Query</button>
         </div>
 
-        <div id="askResult" style="margin-top:20px;"></div>
+        <div id="chatContainer">
+            <div id="askResult">
+                <p style="text-align:center; color:#64748b; font-size:12px; margin-top:20px;">Dialogue history will appear here. Start by asking a question above.</p>
+            </div>
+        </div>
 
         <div id="approvalBox" style="display:none; border:2px solid #eab308; padding:20px; border-radius:12px; background: rgba(234, 179, 8, 0.05); margin-top:20px; animation: slideIn 0.3s;">
             <h4 style="color:#eab308; margin-bottom:10px; font-size:14px;">🛠️ Awaiting Your Approval</h4>
@@ -484,6 +495,12 @@ console.log(response.summary);
                         <input type="number" id="lim_${item._id}" value="${item.limitSize || 50}">
                     </div>
                 </div>
+                <div class="row" style="margin-top:10px;">
+                    <div style="flex:1">
+                        <label>Forbidden Syntax (Comma separated)</label>
+                        <input type="text" id="forb_${item._id}" value="${(item.forbiddenSyntax || []).join(', ')}" placeholder="delete, drop, aggregate...">
+                    </div>
+                </div>
                 <label>Technical Fields & Types</label>
                 <textarea id="tech_${item._id}" rows="5" style="font-family:monospace; font-size:12px;">${item.techSchema || ''}</textarea>
                 <label>Deep Narrative (Keys / Joins)</label>
@@ -504,6 +521,7 @@ console.log(response.summary);
                 techSchema: document.getElementById('tech_'+id).value,
                 schemaDescription: document.getElementById('desc_'+id).value,
                 limitSize: parseInt(document.getElementById('lim_'+id).value) || 50,
+                forbiddenSyntax: document.getElementById('forb_'+id).value.split(',').map(s => s.trim()).filter(s => s),
                 isBlacklisted: document.getElementById('blk_'+id).checked
             })
         });
@@ -527,7 +545,21 @@ console.log(response.summary);
         const appBox = document.getElementById('approvalBox');
 
         btn.disabled = true;
-        resBox.innerHTML = '<div class="status status-info pulse">🔍 AI is scanning the map and writing query...</div>';
+        // Append User Message
+        const chat = document.getElementById('askResult');
+        const userMsg = document.createElement('div');
+        userMsg.className = 'msg-user';
+        userMsg.innerText = q;
+        chat.appendChild(userMsg);
+        document.getElementById('question').value = '';
+
+        // Append Loading Indicator
+        const loader = document.createElement('div');
+        loader.id = 'currentLoader';
+        loader.innerHTML = '<div class="status status-info pulse" style="margin-top:0;">🔍 AI is scanning the map and writing query...</div>';
+        chat.appendChild(loader);
+        
+        autoScroll();
         appBox.style.display = 'none';
         tech.innerHTML = `[INPUT]: ${q}\n[STATUS]: Generating query...`;
 
@@ -540,7 +572,11 @@ console.log(response.summary);
             const data = await res.json();
             
             if (data.status === 'PENDING_APPROVAL') {
-                resBox.innerHTML = '<div class="status" style="background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; color:#facc15;">Query logic ready. Technical Console updated. Waiting for signature.</div>';
+                if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+                const status = document.createElement('div');
+                status.innerHTML = '<div class="status" style="background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; color:#facc15; margin-top:0;">Query logic ready. Technical Console updated. Waiting for signature.</div>';
+                chat.appendChild(status);
+                
                 tech.innerHTML = `[PROPOSED QUERY]:\n\n${data.query}\n\n[ESTIMATED COST]: $${(data.costUSD || 0).toFixed(6)}`;
                 document.getElementById('pendingQueryId').value = data.queryId;
                 appBox.style.display = 'block';
@@ -548,22 +584,33 @@ console.log(response.summary);
             } else if (data.status === 'EXECUTED_SUCCESS') {
                 renderResult(data);
             } else {
-                resBox.innerHTML = `<div class="status status-err">${data.message || data.error}</div>`;
+                if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+                const err = document.createElement('div');
+                err.innerHTML = `<div class="status status-err" style="margin-top:0;">${data.message || data.error}</div>`;
+                chat.appendChild(err);
             }
         } catch(e) {
-            resBox.innerHTML = `<div class="status status-err">${e.message}</div>`;
+            if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+            const err = document.createElement('div');
+            err.innerHTML = `<div class="status status-err" style="margin-top:0;">${e.message}</div>`;
+            chat.appendChild(err);
         } finally {
             btn.disabled = false;
+            autoScroll();
             updateCost();
             loadHistory();
         }
     }
 
     function renderResult(data) {
-        const resBox = document.getElementById('askResult');
+        if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+        const chat = document.getElementById('askResult');
         const tech = document.getElementById('techContent');
-        resBox.innerHTML = `
-            <div class="summary-card">
+        
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'msg-ai';
+        aiMsg.innerHTML = `
+            <div class="summary-card" style="margin-bottom:0;">
                 <h4>AI Insights Output</h4>
                 <p>${data.summary || 'Database returned results successfully.'}</p>
                 <div style="margin-top:15px; font-size:11px; color:#93c5fd; border-top: 1px solid rgba(147, 197, 253, 0.3); padding-top: 10px;">
@@ -571,17 +618,30 @@ console.log(response.summary);
                 </div>
             </div>
         `;
+        chat.appendChild(aiMsg);
+        autoScroll();
         tech.innerHTML = `[SUCCESS]\n[RECORDS]: ${data.data?.length || 0}\n\n[RAW DATA JSON]:\n${JSON.stringify(data.data, null, 2)}`;
+    }
+
+    function autoScroll() {
+        const c = document.getElementById('chatContainer');
+        c.scrollTop = c.scrollHeight;
     }
 
     async function doExecute() {
         const id = document.getElementById('pendingQueryId').value;
         const btn = document.getElementById('btnExecute');
-        const resBox = document.getElementById('askResult');
+        const chat = document.getElementById('askResult');
         
         btn.disabled = true;
         btn.innerText = "Executing On-Chain...";
-        resBox.innerHTML = '<div class="status status-info pulse">⚡ Confirming signature and pulling data...</div>';
+        if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+        
+        const loader = document.createElement('div');
+        loader.id = 'currentLoader';
+        loader.innerHTML = '<div class="status status-info pulse" style="margin-top:0;">⚡ Confirming signature and pulling data...</div>';
+        chat.appendChild(loader);
+        autoScroll();
 
         try {
             const res = await fetch('/api/execute/' + id, { method: 'POST' });
@@ -599,7 +659,12 @@ console.log(response.summary);
 
     function doReject() {
         document.getElementById('approvalBox').style.display = 'none';
-        document.getElementById('askResult').innerHTML = '<div class="status status-err">Terminated. User rejected the query.</div>';
+        if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+        const chat = document.getElementById('askResult');
+        const err = document.createElement('div');
+        err.innerHTML = '<div class="status status-err" style="margin-top:0;">Terminated. User rejected the query.</div>';
+        chat.appendChild(err);
+        autoScroll();
     }
 </script>
 </body>

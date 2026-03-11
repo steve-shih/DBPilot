@@ -56,6 +56,18 @@ export class SchemaExplorer {
           limitSize: 50
         });
 
+        // New: Persist exploration cost to audit log so it shows up in dashboard
+        const { AuditLog } = require('../db/internal');
+        await AuditLog.create({
+          userQuestion: `[SYSTEM] Exploration: ${colName}`,
+          status: 'EXECUTED_SUCCESS',
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          totalTokens: usage.inputTokens + usage.outputTokens,
+          costUSD: usage.costUSD,
+          resultSummary: { type: 'SCHEMA_EXPLORE', collection: colName }
+        });
+
         console.log(`[DBPilot] ✅ Saved Metadata for ${colName}`);
       } catch (err: any) {
         console.error(`[DBPilot] ❌ Failed to explore ${colName}:`, err.message);

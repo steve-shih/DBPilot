@@ -23,10 +23,11 @@ export class LLMOrchestrator {
   }
 
   private calculateCost(model: string, inputTokens: number, outputTokens: number): number {
+    const m = model.toLowerCase();
     // Current rough pricing per 1M tokens (Sonnet 3.5: $3/$15, GPT-4o: $5/$15, 4o-mini: $0.15/$0.6)
-    if (model.includes('claude-sonnet')) return (inputTokens * 3 / 1000000) + (outputTokens * 15 / 1000000);
-    if (model === 'gpt-4o') return (inputTokens * 5 / 1000000) + (outputTokens * 15 / 1000000);
-    if (model === 'gpt-4o-mini') return (inputTokens * 0.15 / 1000000) + (outputTokens * 0.6 / 1000000);
+    if (m.includes('claude-3-5-sonnet')) return (inputTokens * 3 / 1000000) + (outputTokens * 15 / 1000000);
+    if (m.includes('gpt-4o-mini')) return (inputTokens * 0.15 / 1000000) + (outputTokens * 0.6 / 1000000);
+    if (m.includes('gpt-4o')) return (inputTokens * 5 / 1000000) + (outputTokens * 15 / 1000000);
     return 0; // Local or unknown models
   }
 
@@ -55,8 +56,9 @@ Return strictly in JSON format:
     const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       if (this.aiModel === 'claude' && this.anthropic) {
+          const mName = "claude-3-5-sonnet-20241022";
           const response = await this.anthropic.messages.create({
-              model: "claude-sonnet-4-20250514",
+              model: mName,
               max_tokens: 2000,
               system: "You are a DB expert. Formulate your response as a valid JSON object only.",
               messages: [{ role: "user", content: prompt }]
@@ -66,7 +68,7 @@ Return strictly in JSON format:
           
           usage.inputTokens = response.usage.input_tokens;
           usage.outputTokens = response.usage.output_tokens;
-          usage.costUSD = this.calculateCost("claude-sonnet-4-20250514", usage.inputTokens, usage.outputTokens);
+          usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
 
           text = text.replace(/^```[a-z]*\n?/gm, '').replace(/```$/gm, '').trim();
           const result = JSON.parse(text);
@@ -124,14 +126,16 @@ User Question: ${question}
 Instructions:
 1. Examine "structure" for nested objects or arrays.
 2. Examine "fields" for correct data types.
-3. Generate ONLY the JS query code (e.g. \`db.collection('users').find({ age: { $gt: 18 } })\`). DO NOT append limit.`;
+3. If the user question is NOT related to the database schema, business context provided, or data analysis, return ONLY the string "查詢不到".
+4. Otherwise, generate ONLY the JS query code (e.g. \`db.collection('users').find({ age: { $gt: 18 } })\`). DO NOT append limit.`;
 
     const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       let code = '';
       if (this.aiModel === 'claude' && this.anthropic) {
+          const mName = "claude-3-5-sonnet-20241022";
           const response = await this.anthropic.messages.create({
-              model: "claude-sonnet-4-20250514",
+              model: mName,
               max_tokens: 1000,
               system: "You are an expert MongoDB Query Generator. Output EXACTLY raw query javascript code.",
               messages: [{ role: "user", content: prompt }]
@@ -140,7 +144,7 @@ Instructions:
           code = (textBlock as any)?.text || '';
           usage.inputTokens = response.usage.input_tokens;
           usage.outputTokens = response.usage.output_tokens;
-          usage.costUSD = this.calculateCost("claude-sonnet-4-20250514", usage.inputTokens, usage.outputTokens);
+          usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
       } else if (this.openai) {
           const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o";
           const response = await this.openai.chat.completions.create({
@@ -174,8 +178,9 @@ Summary:`;
     const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       if (this.aiModel === 'claude' && this.anthropic) {
+          const mName = "claude-3-5-sonnet-20241022";
           const response = await this.anthropic.messages.create({
-              model: "claude-sonnet-4-20250514",
+              model: mName,
               max_tokens: 500,
               system: "You are a helpful data analyst. Summarize results clearly and concisely.",
               messages: [{ role: "user", content: prompt }]
@@ -183,7 +188,7 @@ Summary:`;
           const textBlock = response.content.find((block: any) => block.type === 'text');
           usage.inputTokens = response.usage.input_tokens;
           usage.outputTokens = response.usage.output_tokens;
-          usage.costUSD = this.calculateCost("claude-sonnet-4-20250514", usage.inputTokens, usage.outputTokens);
+          usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
           return { summary: (textBlock as any)?.text || '', usage };
       } else if (this.openai) {
           const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o-mini";

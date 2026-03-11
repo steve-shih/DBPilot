@@ -19,6 +19,10 @@ export class QueryGuard {
       return `Collection '${collectionName}' not recognized by DBPilot metadata.`;
     }
 
+    if (meta.isBlacklisted) {
+      return `Collection '${collectionName}' is BLACKLISTED and cannot be queried.`;
+    }
+
     // Check method against forbidden syntax
     if (meta.forbiddenSyntax.includes(method)) {
       return `Method '${method}' is forbidden for collection '${collectionName}'. Allowed methods: find(), countDocuments(), etc.`;
