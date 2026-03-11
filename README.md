@@ -1,4 +1,4 @@
-# 🚀 DBPilot V3: The Enterprise AI Database Co-Pilot | 企業級 AI 資料庫副駕駛
+# 🚀 DBPilot V3: The Enterprise AI Database Co-Pilot | AI 資料庫副駕駛
 
 [English](#english) | [繁體中文](#繁體中文)
 
