@@ -1,37 +1,87 @@
-# 🚀 DBPilot V3: The Enterprise AI Database Co-Pilot
+# 🚀 DBPilot V3: The Enterprise AI Database Co-Pilot | 企業級 AI 資料庫副駕駛
 
-DBPilot is a powerful, AI-driven database exploration and querying tool designed for both technical and non-technical users. It provides an intelligent bridge between natural language and complex database queries (starting with MongoDB).
+[English](#english) | [繁體中文](#繁體中文)
 
 ---
 
-## 🌟 Key Features
+<a name="繁體中文"></a>
+## 🇹🇼 繁體中文介紹
 
-### 1. 🧠 Smart Schema Mapping (AI-Enriched)
+DBPilot 是一款強大的 AI 驅動資料庫探索與查詢工具，專為技術與非技術人員設計。它在自然語言與複雜的資料庫查詢（目前支援 MongoDB）之間架起了一座智慧橋樑。
+
+### 🌟 核心特性
+
+#### 1. 🧠 智慧 Schema 映射 (AI 增強)
+DBPilot 不僅僅是基本的欄位檢測。它利用 Claude 3.5 Sonnet 分析資料樣本並生成：
+- **商業用途**：以繁體中文為每個集合（Collection）提供易懂的商業背景說明。
+- **技術映射**：詳細的欄位型別與技術含義。
+- **深度敘述**：理解巢狀結構與關聯鍵邏輯。
+
+#### 2. 🛡️ 企業級治理與安全
+- **人機協作 (Human-in-the-Loop)**：在執行任何查詢前，可設定是否需要使用者手動確認。
+- **動態防護網**：可針對每個集合設定禁用語法（如 `delete`, `drop`）與查詢筆數限制。
+- **稽核日誌**：每一次查詢、成本與 Token 使用量都會記錄在本地內部資料庫中。
+
+#### 3. 💰 即時成本追蹤
+- **精確核算**：根據 Token 使用量即時計算 USD 成本。
+- **透明化**：在介面左上角即時顯示當前對話與整體的運算成本。
+
+#### 4. 📖 對話歷史紀錄
+- **歷史日誌抽屜**：快速訪問與回顧過往的提問與查詢結果。
+- **軟刪除功能**：支援清空歷史視圖，同時在後端保留完整的稽核軌跡。
+
+#### 5. 🔌 雙棲彈性架構
+- **Web GUI**：精緻的精靈式介面，即開即用。
+- **原生 SDK**：可將 DBPilot 導出為套件，輕鬆嵌入至自家企業系統中。
+
+### 🛠️ 快速上手 (GUI)
+
+1. **安裝依賴**：
+   ```bash
+   npm install
+   ```
+2. **設定環境變數**：
+   建立 `.env` 檔案並填入 `ANTHROPIC_API_KEY` 或 `OPENAI_API_KEY`。
+3. **啟動**：
+   ```bash
+   npm run gui
+   ```
+4. **連線**：
+   開啟 `http://localhost:4000` 並依照三步驟指引完成設定。
+
+---
+
+<a name="english"></a>
+## 🇺🇸 English Version
+
+DBPilot is a powerful, AI-driven database exploration and querying tool designed for both technical and non-technical users. It provides an intelligent bridge between natural language and complex database queries (starting with MongoDB).
+
+### 🌟 Key Features
+
+#### 1. 🧠 Smart Schema Mapping (AI-Enriched)
 DBPilot goes beyond basic field detection. It uses Claude 3.5 Sonnet to analyze data samples and generate:
 - **Business Purpose**: Human-readable explanation of each collection in Traditional Chinese.
 - **Technical Mapping**: Detailed field types and meanings.
 - **Deep Narratives**: Understanding of nested structures and relationship keys.
 
-### 2. 🛡️ Enterprise Governance & Security
+#### 2. 🛡️ Enterprise Governance & Security
 - **Human-in-the-Loop**: Optional signature requirement before any query execution.
 - **Dynamic Guardrails**: Per-collection forbidden syntax (e.g., `delete`, `drop`) and hard row limits.
 - **Auditing**: Every query, cost, and token usage is logged to a local internal database.
 
-### 3. 💰 Real-time Cost Tracking
+#### 3. 💰 Real-time Cost Tracking
 - **Precision Accounting**: Live calculation of USD costs based on token usage.
 - **Transparency**: See exactly how much each query and session costs in the top-left corner.
 
-### 4. 📖 Conversational History
+#### 4. 📖 Conversational History
 - **History Drawer**: Quickly access and review previous sessions and queries.
 - **Soft-Delete**: Clean your history while maintaining a complete audit trail in the backend.
 
-### 5. 🔌 Dual-Usage Architecture
+#### 5. 🔌 Dual-Usage Architecture
 - **Web GUI**: A sleek, wizard-style interface for immediate use.
 - **Native SDK**: Export DBPilot as a package to embed safe AI-querying into your own applications.
 
----
-
-## 🛠️ Quick Start (GUI)
+### 🛠️ Quick Start (GUI)
 
 1. **Install Dependencies**:
    ```bash
@@ -72,9 +122,7 @@ console.log("Data:", result.data);
 console.log("Cost:", result.costUSD);
 ```
 
----
-
-## 🏗️ Architecture
+### 🏗️ Architecture
 
 - **Core**: TypeScript + Node.js
 - **Internal DB**: Local MongoDB (for metadata, logs, and rules)
