@@ -133,7 +133,7 @@ const pilot = new DBPilotCore({
   selectedAiModel: 'claude', // Default
   requireUserApproval: false  // Direct execution for automation
 });
-
+// 建議去db看一下詳細生成的規則如是正式環境非測試環境，不像有gui可以double確認
 await pilot.initialize();
 
 // Natural language to data
