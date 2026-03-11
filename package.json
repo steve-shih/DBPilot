@@ -1,0 +1,26 @@
+{
+  "name": "DBPilot",
+  "version": "1.0.0",
+  "description": "DataPilot is a secure middleware layer that converts natural language into database queries. It safely bridges the gap between Large Language Models (LLMs) and your databases by enforcing strict security guards, preventing destructive operations and system overloads.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/steve-shih/DBPilot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/steve-shih/DBPilot/issues"
+  },
+  "homepage": "https://github.com/steve-shih/DBPilot#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^4.22.1",
+    "mongodb": "^4.17.2",
+    "openai": "^6.27.0"
+  }
+}
