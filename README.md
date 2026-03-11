@@ -40,7 +40,7 @@ Optional Human-in-the-loop approval
 
 Token usage monitoring
 
-Live USD cost calculation
+Live USD cost calculation (not ready)
 
 Transparent AI usage
 
