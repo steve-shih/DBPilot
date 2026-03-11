@@ -98,8 +98,11 @@ export class DBPilotCore {
 
         const data = await QueryRunner.execute(this.targetDb.getDb(), enforcedQuery);
         
+        // Truncate data for summarization (max 20 records) to prevent LLM timeouts
+        const truncatedData = Array.isArray(data) ? data.slice(0, 20) : data;
+        
         // New: Summarize results using LLM
-        const { summary, usage } = await this.orchestrator.summarizeData(log.userQuestion, data);
+        const { summary, usage } = await this.orchestrator.summarizeData(log.userQuestion, truncatedData);
 
         const finalInput = (log.inputTokens || 0) + usage.inputTokens;
         const finalOutput = (log.outputTokens || 0) + usage.outputTokens;

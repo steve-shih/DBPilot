@@ -615,7 +615,9 @@ console.log(response.summary);
         `;
         chat.appendChild(aiMsg);
         autoScroll();
-        tech.innerHTML = `[SUCCESS]\n[RECORDS]: ${data.data?.length || 0}\n\n[RAW DATA JSON]:\n${JSON.stringify(data.data, null, 2)}`;
+        const rawJson = JSON.stringify(data.data, null, 2);
+        const displayJson = rawJson.length > 5000 ? rawJson.slice(0, 5000) + "\n\n... [TRUNCATED FOR UI PERFORMANCE] ..." : rawJson;
+        tech.innerHTML = `[SUCCESS]\n[RECORDS]: ${data.data?.length || 0}\n\n[RAW DATA JSON]:\n${displayJson}`;
     }
 
     function autoScroll() {

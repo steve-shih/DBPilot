@@ -65,7 +65,7 @@ Return strictly in JSON format:
               max_tokens: 2000,
               system: "You are a DB expert. Formulate your response as a valid JSON object only.",
               messages: [{ role: "user", content: prompt }]
-          });
+          }, { timeout: 25000 });
           const textBlock = response.content.find((block: any) => block.type === 'text');
           let text = (textBlock as any)?.text || '{}';
           
@@ -88,7 +88,7 @@ Return strictly in JSON format:
             model: mModel,
             messages: [{ role: "system", content: "You are a DB expert. Return JSON." }, { role: "user", content: prompt }],
             response_format: { type: "json_object" }
-          });
+          }, { timeout: 25000 });
           const result = JSON.parse(response.choices[0].message.content || '{}');
           
           if (response.usage) {
@@ -142,7 +142,7 @@ Instructions:
               max_tokens: 1000,
               system: "You are an expert MongoDB Query Generator. Output EXACTLY raw query javascript code.",
               messages: [{ role: "user", content: prompt }]
-          });
+          }, { timeout: 25000 });
           const textBlock = response.content.find((block: any) => block.type === 'text');
           code = (textBlock as any)?.text || '';
           usage.inputTokens = response.usage.input_tokens;
@@ -153,7 +153,7 @@ Instructions:
           const response = await this.openai.chat.completions.create({
             model: mModel,
             messages: [{ role: "system", content: "You are an expert MongoDB Query Generator. Output EXACTLY raw JS queries without backticks." }, { role: "user", content: prompt }]
-          });
+          }, { timeout: 25000 });
           code = response.choices[0].message.content || '';
           if (response.usage) {
             usage.inputTokens = response.usage.prompt_tokens;
@@ -187,7 +187,7 @@ Summary:`;
               max_tokens: 500,
               system: "You are a helpful data analyst. Summarize results clearly and concisely.",
               messages: [{ role: "user", content: prompt }]
-          });
+          }, { timeout: 25000 });
           const textBlock = response.content.find((block: any) => block.type === 'text');
           usage.inputTokens = response.usage.input_tokens;
           usage.outputTokens = response.usage.output_tokens;
@@ -198,7 +198,7 @@ Summary:`;
           const response = await this.openai.chat.completions.create({
             model: mModel,
             messages: [{ role: "system", content: "You are a data analyst." }, { role: "user", content: prompt }]
-          });
+          }, { timeout: 25000 });
           if (response.usage) {
             usage.inputTokens = response.usage.prompt_tokens;
             usage.outputTokens = response.usage.completion_tokens;
