@@ -156,7 +156,7 @@ console.log(result.summary);
 ---
 
 ## 🎬 Credits
-- ⚠️ This project is **~95% generated** using AI (Claude 3.5 Sonnet & GPT-4o).
+- ⚠️ This project is **~80% generated** using AI (Claude).
 
 ---
 © 2026 DBPilot Open Source Project. All rights reserved.
