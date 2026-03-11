@@ -42,15 +42,16 @@ export class SchemaExplorer {
         console.log(`[DBPilot]   Got ${samples.length} sample docs from ${colName}`);
         
         console.log(`[DBPilot] Generating AI Metadata for ${colName}...`);
-        const info = await this.orchestrator.describeSchema(colName, samples);
-        console.log(`[DBPilot]   AI Description (first 80 chars): ${(info.businessPurpose || '').slice(0, 80)}`);
+        const { businessPurpose, techSchema, schemaDescription, relatedCollections, usage } = await this.orchestrator.describeSchema(colName, samples);
+        console.log(`[DBPilot]   AI Description (first 80 chars): ${(businessPurpose || '').slice(0, 80)}`);
+        console.log(`[DBPilot]   Exploration Cost: $${usage.costUSD.toFixed(4)}`);
         
         await CollectionMetadata.create({
           collectionName: colName,
-          businessPurpose: info.businessPurpose,
-          techSchema: info.techSchema,
-          schemaDescription: info.schemaDescription,
-          relatedCollections: info.relatedCollections,
+          businessPurpose,
+          techSchema,
+          schemaDescription,
+          relatedCollections,
           forbiddenSyntax: ['delete', 'update', 'insert', 'drop'],
           limitSize: 50
         });

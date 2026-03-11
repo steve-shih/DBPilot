@@ -22,7 +22,15 @@ export class LLMOrchestrator {
     }
   }
 
-  async describeSchema(collectionName: string, samples: any[]): Promise<{ businessPurpose: string, techSchema: string, schemaDescription: string, relatedCollections: string[] }> {
+  private calculateCost(model: string, inputTokens: number, outputTokens: number): number {
+    // Current rough pricing per 1M tokens (Sonnet 3.5: $3/$15, GPT-4o: $5/$15, 4o-mini: $0.15/$0.6)
+    if (model.includes('claude-sonnet')) return (inputTokens * 3 / 1000000) + (outputTokens * 15 / 1000000);
+    if (model === 'gpt-4o') return (inputTokens * 5 / 1000000) + (outputTokens * 15 / 1000000);
+    if (model === 'gpt-4o-mini') return (inputTokens * 0.15 / 1000000) + (outputTokens * 0.6 / 1000000);
+    return 0; // Local or unknown models
+  }
+
+  async describeSchema(collectionName: string, samples: any[]): Promise<{ businessPurpose: string, techSchema: string, schemaDescription: string, relatedCollections: string[], usage: any }> {
     const prompt = `You are a Senior Database Architect. Analyze the following MongoDB collection and its sample data (latest 10 docs).
 
 Goal: Help a user understand what is inside this database and how to query it.
@@ -44,6 +52,7 @@ Return strictly in JSON format:
   "relatedCollections": ["..."]
 }`;
 
+    const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       if (this.aiModel === 'claude' && this.anthropic) {
           const response = await this.anthropic.messages.create({
@@ -54,13 +63,19 @@ Return strictly in JSON format:
           });
           const textBlock = response.content.find((block: any) => block.type === 'text');
           let text = (textBlock as any)?.text || '{}';
+          
+          usage.inputTokens = response.usage.input_tokens;
+          usage.outputTokens = response.usage.output_tokens;
+          usage.costUSD = this.calculateCost("claude-sonnet-4-20250514", usage.inputTokens, usage.outputTokens);
+
           text = text.replace(/^```[a-z]*\n?/gm, '').replace(/```$/gm, '').trim();
           const result = JSON.parse(text);
           return {
             businessPurpose: result.businessDescription || '',
             techSchema: result.technicalSchema || '',
             schemaDescription: result.schemaDescription || '',
-            relatedCollections: result.relatedCollections || []
+            relatedCollections: result.relatedCollections || [],
+            usage
           };
       } else if (this.openai) {
           const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o-mini";
@@ -70,20 +85,28 @@ Return strictly in JSON format:
             response_format: { type: "json_object" }
           });
           const result = JSON.parse(response.choices[0].message.content || '{}');
+          
+          if (response.usage) {
+            usage.inputTokens = response.usage.prompt_tokens;
+            usage.outputTokens = response.usage.completion_tokens;
+            usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
+          }
+
           return {
             businessPurpose: result.businessDescription || '',
             techSchema: result.technicalSchema || '',
             schemaDescription: result.schemaDescription || '',
-            relatedCollections: result.relatedCollections || []
+            relatedCollections: result.relatedCollections || [],
+            usage
           };
       }
     } catch (error) {
       console.error("[LLM] Describe schema error", error);
     }
-    return { businessPurpose: "尚未生成分析。", techSchema: "Unknown.", schemaDescription: "No insight.", relatedCollections: [] };
+    return { businessPurpose: "尚未生成分析。", techSchema: "Unknown.", schemaDescription: "No insight.", relatedCollections: [], usage };
   }
 
-  async generateQuery(question: string, metadatas: any[]): Promise<string> {
+  async generateQuery(question: string, metadatas: any[]): Promise<{ query: string, usage: any }> {
     const prompt = `You are an expert MongoDB Query Generator. Convert the user's natural language question into a MongoDB Node.js driver query string.
 The query should be executable inside \`db.collection('...').METHOD(...)\`, so return ONLY the exact JavaScript code block starting with \`db.collection\`, and nothing else. NO markdown tags like \`\`\`javascript.
 
@@ -103,6 +126,7 @@ Instructions:
 2. Examine "fields" for correct data types.
 3. Generate ONLY the JS query code (e.g. \`db.collection('users').find({ age: { $gt: 18 } })\`). DO NOT append limit.`;
 
+    const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       let code = '';
       if (this.aiModel === 'claude' && this.anthropic) {
@@ -114,6 +138,9 @@ Instructions:
           });
           const textBlock = response.content.find((block: any) => block.type === 'text');
           code = (textBlock as any)?.text || '';
+          usage.inputTokens = response.usage.input_tokens;
+          usage.outputTokens = response.usage.output_tokens;
+          usage.costUSD = this.calculateCost("claude-sonnet-4-20250514", usage.inputTokens, usage.outputTokens);
       } else if (this.openai) {
           const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o";
           const response = await this.openai.chat.completions.create({
@@ -121,21 +148,30 @@ Instructions:
             messages: [{ role: "system", content: "You are an expert MongoDB Query Generator. Output EXACTLY raw JS queries without backticks." }, { role: "user", content: prompt }]
           });
           code = response.choices[0].message.content || '';
+          if (response.usage) {
+            usage.inputTokens = response.usage.prompt_tokens;
+            usage.outputTokens = response.usage.completion_tokens;
+            usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
+          }
       }
-      return code.replace(/^```[a-z]*|```$/gm, '').trim();
+      return {
+        query: code.replace(/^```[a-z]*|```$/gm, '').trim(),
+        usage
+      };
     } catch (error) {
       console.error("[LLM] Generate query error", error);
       throw error;
     }
   }
 
-  async summarizeData(question: string, data: any): Promise<string> {
+  async summarizeData(question: string, data: any): Promise<{ summary: string, usage: any }> {
     const prompt = `You are a data analyst. Based on the user's question and the retrieved data from the database, provide a concise and professional summary in Traditional Chinese.
 User Question: ${question}
 Retrieved Data: ${JSON.stringify(data, null, 2)}
 
 Summary:`;
 
+    const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       if (this.aiModel === 'claude' && this.anthropic) {
           const response = await this.anthropic.messages.create({
@@ -145,18 +181,26 @@ Summary:`;
               messages: [{ role: "user", content: prompt }]
           });
           const textBlock = response.content.find((block: any) => block.type === 'text');
-          return (textBlock as any)?.text || '';
+          usage.inputTokens = response.usage.input_tokens;
+          usage.outputTokens = response.usage.output_tokens;
+          usage.costUSD = this.calculateCost("claude-sonnet-4-20250514", usage.inputTokens, usage.outputTokens);
+          return { summary: (textBlock as any)?.text || '', usage };
       } else if (this.openai) {
           const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o-mini";
           const response = await this.openai.chat.completions.create({
             model: mModel,
             messages: [{ role: "system", content: "You are a data analyst." }, { role: "user", content: prompt }]
           });
-          return response.choices[0].message.content || '';
+          if (response.usage) {
+            usage.inputTokens = response.usage.prompt_tokens;
+            usage.outputTokens = response.usage.completion_tokens;
+            usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
+          }
+          return { summary: response.choices[0].message.content || '', usage };
       }
     } catch (error) {
       console.error("[LLM] Summarize data error", error);
     }
-    return "無法生成資料總結。";
+    return { summary: "無法生成資料總結。", usage };
   }
 }

@@ -3,60 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DBPilot GUI</title>
+    <title>DBPilot V3 | Smart Schema Pilot</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .page { display: none; min-height: 100vh; padding: 40px 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Layout */
+        .page { display: none; min-height: 100vh; padding: 60px 20px; position: relative; }
         .page.active { display: block; }
-        .card { max-width: 800px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .card { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative; }
+        
+        /* Dashboard Overlay */
+        #costDisplay { position: fixed; top: 15px; left: 15px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 8px 15px; border-radius: 20px; border: 1px solid #334155; font-size: 12px; z-index: 100; color: #6ee7b7; font-weight: bold; }
+        
+        /* Stepper & Navigation */
         h1 { color: #60a5fa; margin-bottom: 6px; font-size: 28px; }
         h2 { color: #94a3b8; font-size: 14px; margin-bottom: 25px; font-weight: normal; }
+        .stepper { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
+        .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
+        .step-dot.active { background: #3b82f6; width: 30px; border-radius: 5px; }
+
+        /* Tabs */
+        .tab-bar { display: flex; gap: 20px; border-bottom: 1px solid #334155; margin-bottom: 25px; }
+        .tab { padding: 10px 0; color: #94a3b8; cursor: pointer; border-bottom: 3px solid transparent; font-size: 14px; font-weight: 600; }
+        .tab.active { color: #60a5fa; border-color: #60a5fa; }
+        .tab-content { display: none; padding: 10px 0; }
+        .tab-content.active { display: block; }
+
+        /* Form Controls */
         label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
-        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #334155; border-radius: 6px; background: #0f172a; color: #e2e8f0; font-size: 14px; outline: none; }
-        input:focus, select:focus, textarea:focus { border-color: #3b82f6; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #334155; border-radius: 6px; background: #0f172a; color: #e2e8f0; font-size: 14px; outline: none; transition: 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         .row { display: flex; gap: 12px; } .row > div { flex: 1; }
+
+        /* Buttons */
         .btn { display: inline-block; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 14px; transition: 0.2s; text-align: center; }
         .btn-primary { background: #3b82f6; color: white; }
         .btn-green { background: #10b981; color: white; }
         .btn-red { background: #ef4444; color: white; }
         .btn-outline { background: transparent; border: 1px solid #475569; color: #94a3b8; }
         .btn-bar { display: flex; justify-content: space-between; margin-top: 25px; }
-        .status { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 13px; }
+        
+        /* Status & Feedback */
+        .status { margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 13px; animation: fadeIn 0.3s ease; }
         .status-info { background: #1e3a8a; color: #93c5fd; }
         .status-ok { background: #064e3b; color: #6ee7b7; }
         .status-err { background: #450a0a; color: #fca5a5; }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; background: #1e3a8a; color: #93c5fd; }
-        .toggle { position: relative; display: inline-block; width: 44px; height: 22px; vertical-align: middle; }
-        .toggle input { opacity: 0; width: 0; height: 0; }
-        .toggle .slider { position: absolute; cursor: pointer; inset: 0; background: #475569; border-radius: 22px; }
-        .toggle .slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
-        .toggle input:checked + .slider { background: #3b82f6; }
-        .toggle input:checked + .slider:before { transform: translateX(22px); }
-        .col-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 20px; position: relative; }
-        .col-card h4 { color: #60a5fa; font-size: 18px; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
-        .stepper { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
-        .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
-        .step-dot.active { background: #3b82f6; width: 30px; border-radius: 5px; }
 
-        /* Floating Technical Button & Panel */
-        #techPanel { position: fixed; right: 20px; bottom: 80px; width: 400px; max-height: 500px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; overflow: hidden; z-index: 1000; }
+        /* Schema Manager */
+        .col-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .col-card h4 { color: #60a5fa; font-size: 18px; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+
+        /* Drawer - History */
+        #historyDrawer { position: fixed; top: 0; right: -350px; width: 350px; height: 100vh; background: #1e293b; border-left: 1px solid #334155; box-shadow: -10px 0 30px rgba(0,0,0,0.5); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1002; display: flex; flex-direction: column; }
+        #historyDrawer.open { right: 0; }
+        #historyHeader { padding: 20px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        #historyContent { flex: 1; overflow-y: auto; padding: 15px; }
+        .history-item { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 12px; position: relative; }
+        .history-item .time { font-size: 10px; color: #64748b; margin-bottom: 4px; }
+        .history-item .q { font-weight: bold; color: #e2e8f0; margin-bottom: 4px; }
+        .history-item .cost { color: #6ee7b7; font-size: 10px; }
+        .history-del { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #64748b; }
+
+        /* Technical Panel */
+        #techPanel { position: fixed; right: 20px; bottom: 85px; width: 450px; max-height: 55vh; background: #1e293b; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; overflow: hidden; z-index: 1000; }
         #techHeader { padding: 12px 16px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
         #techContent { padding: 16px; overflow-y: auto; font-family: "Fira Code", monospace; font-size: 12px; color: #a5b4fc; background: #020617; flex: 1; }
-        #techFab { position: fixed; right: 20px; bottom: 20px; width: 50px; height: 50px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(59,130,246,0.5); z-index: 1001; transition: transform 0.2s; }
-        #techFab:hover { transform: scale(1.1); }
-        #techFab .icon { font-size: 24px; color: white; }
+        
+        /* Floating Action Buttons */
+        .fab { position: fixed; right: 20px; width: 50px; height: 50px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(59,130,246,0.5); z-index: 1001; transition: 0.2s; border: none; }
+        .fab:hover { transform: scale(1.1); transform-origin: center; }
+        #techFab { bottom: 20px; }
+        #historyFab { bottom: 80px; background: #475569; }
 
-        .summary-card { background: #1e3a8a; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 8px; color: #f1f5f9; line-height: 1.6; margin-bottom: 20px; }
-        .summary-card h4 { color: #93c5fd; margin-bottom: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        /* Loading Animation & Feature Carousel */
+        .loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #1e293b; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 30px; }
+        .feature-teaser { max-width: 400px; height: 100px; color: #94a3b8; font-size: 16px; font-weight: 500; }
+        
+        /* Summary Card */
+        .summary-card { background: #1e3a8a; border-left: 5px solid #3b82f6; padding: 25px; border-radius: 8px; color: #f1f5f9; line-height: 1.6; margin-bottom: 20px; animation: slideIn 0.4s ease-out; }
+        .summary-card h4 { color: #93c5fd; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; }
+
+        /* Animations */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .pulse { animation: pulse 2s infinite; }
+
+        /* Utils */
+        .code-block { background: #020617; padding: 15px; border-radius: 6px; font-family: monospace; color: #cbd5e1; margin: 10px 0; border: 1px solid #334155; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #1e3a8a; color: #93c5fd; }
     </style>
 </head>
 <body>
 
-<!-- Floating Tech Button -->
-<div id="techFab" onclick="toggleTechPanel()" style="display:none;">
-    <span class="icon">📜</span>
+<div id="costDisplay">Total Cost: $0.0000</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <div id="teaserBox" class="feature-teaser">DBPilot is parsing your data structure...</div>
+    <p style="margin-top:20px; font-size:12px; color:#3b82f6;">First-time scanning usually takes 30-60 seconds.</p>
 </div>
+
+<!-- History Drawer -->
+<div id="historyDrawer">
+    <div id="historyHeader">
+        <span style="font-weight:700;">HISTORY LOG</span>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" style="padding:4px 8px; font-size:10px; background: transparent; border: 1px solid #450a0a; color: #ef4444;" onclick="clearHistory()">Clear All</button>
+            <button class="btn" style="padding:4px 8px; background:transparent; color:#94a3b8;" onclick="toggleHistory()">✕</button>
+        </div>
+    </div>
+    <div id="historyContent"></div>
+</div>
+
+<!-- Floating Buttons -->
+<button id="historyFab" class="fab" title="Conversation History" onclick="toggleHistory()" style="display:none;">📖</button>
+<button id="techFab" class="fab" title="Technical Console" onclick="toggleTechPanel()" style="display:none;">📜</button>
 
 <!-- Technical Panel -->
 <div id="techPanel">
@@ -64,54 +130,75 @@
         <span style="font-weight:700; font-size:13px;">TECHNICAL CONSOLE</span>
         <button class="btn" style="padding:4px 8px; background:transparent; color:#94a3b8;" onclick="toggleTechPanel()">✕</button>
     </div>
-    <div id="techContent">
-        (Wait for query generation...)
-    </div>
+    <div id="techContent">Waiting for input...</div>
 </div>
 
-<!-- ==================== PAGE 1: CONNECTION ==================== -->
+<!-- ==================== PAGE 1: ONBOARDING & CONNECTION ==================== -->
 <div class="page active" id="page1">
     <div class="card">
         <div class="stepper"><span class="step-dot active"></span><span class="step-dot"></span><span class="step-dot"></span></div>
-        <h1>🚀 DBPilot</h1>
-        <h2>Step 1 — Connect to Target Database</h2>
+        <h1>🚀 DBPilot V3</h1>
+        <h2>Your AI-powered database co-pilot</h2>
 
-        <!-- Dummy fields to trap browser autofill heuristics -->
-        <div style="position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;">
-            <input type="text" name="prevent_autofill_user" tabIndex="-1">
-            <input type="password" name="prevent_autofill_pass" tabIndex="-1">
+        <div class="tab-bar">
+            <div class="tab active" onclick="showTab('gui-tab', event)">Main Settings</div>
+            <div class="tab" onclick="showTab('sdk-tab', event)">SDK Reference</div>
         </div>
 
-        <label>Database Type</label>
-        <select id="targetDatabaseType">
-            <option value="mongodb" selected>MongoDB</option>
-            <option value="postgresql">PostgreSQL (Soon)</option>
-        </select>
+        <div id="gui-tab" class="tab-content active">
+            <!-- Dummy fields to trap browser autofill -->
+            <div style="position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;">
+                <input type="text" name="p_u" tabIndex="-1"><input type="password" name="p_p" tabIndex="-1">
+            </div>
 
-        <div class="row" style="margin-top:10px;">
-            <div style="flex:3"><label>Host</label><input type="text" id="target_h" placeholder="127.0.0.1" autocomplete="new-password"></div>
-            <div><label>Port</label><input type="text" id="target_p" placeholder="27017" autocomplete="new-password"></div>
+            <label>Target Database</label>
+            <div class="row">
+                <div style="flex:0.4"><select id="targetDatabaseType"><option value="mongodb">MongoDB</option></select></div>
+                <div><input type="text" id="target_h" placeholder="Host (e.g. 127.0.0.1)" autocomplete="new-password"></div>
+                <div style="flex:0.3"><input type="text" id="target_p" placeholder="Port" value="27017" autocomplete="new-password"></div>
+            </div>
+            <div class="row">
+                <div><label>User</label><input type="text" id="target_u" autocomplete="new-password"></div>
+                <div><label>Pass</label><input type="password" id="target_w" autocomplete="new-password"></div>
+                <div><label>DB NAME</label><input type="text" id="target_d" placeholder="target_db" autocomplete="new-password"></div>
+            </div>
+
+            <hr style="border-color:#334155; margin: 25px 0;">
+
+            <label>AI Intelligence (Claude 3.5 Sonnet Recommended)</label>
+            <select id="selectedAiModel" onchange="updateApiKeyLabel()">
+                <option value="claude" selected>Anthropic Claude 3.5 Sonnet (Best English/Chinese)</option>
+                <option value="openai">OpenAI GPT-4o (Fast)</option>
+                <option value="ollama">Ollama (Local Deployment)</option>
+            </select>
+            <label id="apiKeyLabel">Anthropic API Key</label>
+            <input type="password" id="cloud_k" placeholder="sk-ant-..." autocomplete="new-password">
+
+            <div style="margin-top:20px; background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid #1e3a8a;">
+                <div style="display:flex; align-items:center;">
+                    <label class="toggle" style="margin-bottom:0;"><input type="checkbox" id="require_human" checked><span class="slider"></span></label>
+                    <span style="margin-left:12px; font-weight:600; color:#94a3b8; font-size:13px;">Human-in-the-Loop Mode</span>
+                </div>
+                <p style="margin-top:8px; font-size:11px; color:#64748b;">Highly recommended: AI will wait for your approval before writing or executing queries.</p>
+            </div>
         </div>
-        <div class="row">
-            <div><label>Username</label><input type="text" id="target_u" autocomplete="new-password"></div>
-            <div><label>Password</label><input type="password" id="target_w" autocomplete="new-password"></div>
-            <div><label>DB Name</label><input type="text" id="target_d" autocomplete="new-password"></div>
-        </div>
 
-        <hr style="border-color:#334155; margin: 25px 0;">
+        <div id="sdk-tab" class="tab-content">
+            <p style="font-size:14px; color:#94a3b8; margin-bottom:15px;">Want to integrate DBPilot into your app? Use our native SDK:</p>
+            <div class="code-block">
+const { DBPilotCore } = require('dbpilot');
 
-        <label>AI Engine (Claude Recommended)</label>
-        <select id="selectedAiModel" onchange="updateApiHints()">
-            <option value="claude" selected>Claude 3.5 Sonnet</option>
-            <option value="openai">OpenAI GPT-4o</option>
-            <option value="ollama">Ollama (Local)</option>
-        </select>
-        <label id="apiKeyLabel">Anthropic API Key</label>
-        <input type="password" id="cloud_k" placeholder="sk-ant-..." autocomplete="new-password">
+const pilot = new DBPilotCore({
+  targetDatabaseUri: 'mongodb://...',
+  cloudApiKey: '...',
+  selectedAiModel: 'claude'
+});
 
-        <div style="margin-top:20px; display:flex; align-items:center;">
-            <label class="toggle"><input type="checkbox" id="require_human" checked><span class="slider"></span></label>
-            <span style="margin-left:12px; font-weight:600; color:#94a3b8;">Human-in-the-Loop Approval</span>
+await pilot.initialize();
+const response = await pilot.ask("Find users over 30");
+console.log(response.summary);
+            </div>
+            <p style="font-size:12px; color:#64748b; margin-top:10px;">Check README.md for complete enterprise licensing and SDK capabilities.</p>
         </div>
 
         <div class="btn-bar">
@@ -126,17 +213,14 @@
 <div class="page" id="page2">
     <div class="card" style="max-width:1000px;">
         <div class="stepper"><span class="step-dot"></span><span class="step-dot active"></span><span class="step-dot"></span></div>
-        <div style="display:flex; justify-content:space-between; align-items:baseline;">
-            <h1>📦 AI Schema Map</h1>
-            <span id="envBadge" class="badge"></span>
-        </div>
-        <h2>Review and adjust how AI understands your data</h2>
+        <h1>📂 Collection Metadata</h1>
+        <h2>Review how AI understood your schema. You can manually refine instructions here.</h2>
 
         <div id="schemaList"></div>
 
         <div class="btn-bar">
             <button class="btn btn-outline" onclick="goPage(1)">← Back</button>
-            <button class="btn btn-primary" onclick="goPage(3)">Open Playground →</button>
+            <button class="btn btn-primary" onclick="goPage(3)">Enter Playground →</button>
         </div>
     </div>
 </div>
@@ -145,25 +229,28 @@
 <div class="page" id="page3">
     <div class="card" style="max-width:900px;">
         <div class="stepper"><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot active"></span></div>
-        <div style="display:flex; justify-content:space-between; align-items:baseline;">
-            <h1>💬 Smart Playground</h1>
-            <span id="envBadge2" class="badge"></span>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <h1>💬 Smart Playground</h1>
+                <h2 id="currentConfig">Connected: MongoDB | Claude 3.5</h2>
+            </div>
+            <span class="badge" id="envLabel">Production Safe</span>
         </div>
         
-        <div style="margin:20px 0;">
-            <label>Ask anything about your data</label>
-            <textarea id="question" rows="3" placeholder="例如：找出最近十筆訂單，並加總金額..."></textarea>
-            <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="btnAsk" onclick="doAsk()">Ask DBPilot</button>
+        <div style="background:#0f172a; border-radius:12px; padding:20px; margin-top:10px; border:1px solid #334155;">
+            <label>Data Query Question</label>
+            <textarea id="question" rows="3" placeholder="例如：找出最近十位註冊的用戶，並列出他們的信箱..."></textarea>
+            <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="btnAsk" onclick="doAsk()">Fire Query</button>
         </div>
 
-        <div id="askResult"></div>
+        <div id="askResult" style="margin-top:20px;"></div>
 
-        <div id="approvalBox" style="display:none; border:2px solid #eab308; padding:20px; border-radius:12px; background: rgba(234, 179, 8, 0.1); margin-top:20px;">
-            <h4 style="color:#eab308; margin-bottom:10px;">⚠️ Awaiting Execution Approval</h4>
-            <p style="font-size:14px; color:#94a3b8; margin-bottom:15px;">AI has generated a query. Review in the <b>Technical Console (bottom right)</b> before proceeding.</p>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-green" style="flex:1" onclick="doExecute()">✅ Approve & Execute</button>
-                <button class="btn btn-red" onclick="doReject()">Reject</button>
+        <div id="approvalBox" style="display:none; border:2px solid #eab308; padding:20px; border-radius:12px; background: rgba(234, 179, 8, 0.05); margin-top:20px; animation: slideIn 0.3s;">
+            <h4 style="color:#eab308; margin-bottom:10px; font-size:14px;">🛠️ Awaiting Your Approval</h4>
+            <p style="font-size:13px; color:#94a3b8; margin-bottom:15px;">AI has proposed a query. Inspect it in the 📜 Console before confirming.</p>
+            <div style="display:flex; gap:12px;">
+                <button class="btn btn-green" style="flex:2" id="btnExecute" onclick="doExecute()">Execute Proposed Query</button>
+                <button class="btn btn-red" style="flex:1" onclick="doReject()">Discard</button>
             </div>
             <input type="hidden" id="pendingQueryId">
         </div>
@@ -176,58 +263,127 @@
 </div>
 
 <script>
-    // ========= Utils =========
+    // ========= Features Carousel =========
+    const teasers = [
+        "DBPilot is parsing your data structure...",
+        "Using 10-doc sampling to detect field types...",
+        "Identifying deep nested relationships...",
+        "Analyzing business context with Claude 3.5...",
+        "Building AuditLogs for governance...",
+        "Enforcing 'delete' and 'drop' protection..."
+    ];
+    let teaserIdx = 0;
+    setInterval(() => {
+        const box = document.getElementById('teaserBox');
+        if (box) box.innerText = teasers[++teaserIdx % teasers.length];
+    }, 4500);
+
+    // ========= Core Navigation =========
     function goPage(n) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page' + n).classList.add('active');
-        window.scrollTo(0,0);
-        if (n === 3) document.getElementById('techFab').style.display = 'flex';
-        else document.getElementById('techFab').style.display = 'none';
+        window.scrollTo(0, 0);
+        
+        const fabDisplay = n === 3 ? 'flex' : 'none';
+        document.getElementById('techFab').style.display = fabDisplay;
+        document.getElementById('historyFab').style.display = fabDisplay;
+        
+        if (n === 3) {
+            updateCost();
+            loadHistory();
+        }
     }
 
+    function showTab(id, e) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        e.target.classList.add('active');
+    }
+
+    // ========= UI Controls =========
     function toggleTechPanel() {
         const p = document.getElementById('techPanel');
         p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    function updateApiHints() {
-        const m = document.getElementById('selectedAiModel').value;
-        const label = document.getElementById('apiKeyLabel');
-        const input = document.getElementById('cloud_k');
-        if (m === 'claude') { label.innerText = 'Anthropic API Key'; input.placeholder = 'sk-ant-...'; }
-        else if (m === 'openai') { label.innerText = 'OpenAI API Key'; input.placeholder = 'sk-proj-...'; }
-        else { label.innerText = 'Ollama (No key)'; input.placeholder = 'No key needed'; input.value = 'ollama'; }
+    function toggleHistory() {
+        document.getElementById('historyDrawer').classList.toggle('open');
     }
 
-    function buildUri() {
-        const t = document.getElementById('targetDatabaseType').value;
-        const host = document.getElementById('target_h').value.trim() || '127.0.0.1';
-        const port = document.getElementById('target_p').value.trim() || '27017';
-        const user = document.getElementById('target_u').value.trim();
-        const pass = document.getElementById('target_w').value.trim();
-        const dbName = document.getElementById('target_d').value.trim() || 'test';
-        const auth = user && pass ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
+    function updateApiKeyLabel() {
+        const m = document.getElementById('selectedAiModel').value;
+        const l = document.getElementById('apiKeyLabel');
+        const k = document.getElementById('cloud_k');
+        if (m === 'claude') { l.innerText = "Anthropic API Key"; k.placeholder = "sk-ant-..."; }
+        else if (m === 'openai') { l.innerText = "OpenAI API Key"; k.placeholder = "sk-proj-..."; }
+        else { l.innerText = "Ollama (Local Default)"; k.placeholder = "Not required for local"; k.value = "ollama"; }
+    }
+
+    function getUri() {
+        const host = document.getElementById('target_h').value || '127.0.0.1';
+        const port = document.getElementById('target_p').value || '27017';
+        const user = document.getElementById('target_u').value;
+        const pass = document.getElementById('target_w').value;
+        const db = document.getElementById('target_d').value || 'test';
+        const auth = user ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
         const proto = host.includes('mongodb.net') ? 'mongodb+srv' : 'mongodb';
         const p = proto === 'mongodb+srv' ? '' : `:${port}`;
-        return `${proto}://${auth}${host}${p}/${dbName}`;
+        return `${proto}://${auth}${host}${p}/${db}`;
     }
 
-    // ========= Actions =========
+    // ========= APIs =========
+    async function updateCost() {
+        try {
+            const res = await fetch('/api/stats/cost');
+            const data = await res.json();
+            document.getElementById('costDisplay').innerText = `Total Session Cost: $${(data.totalCost || 0).toFixed(6)}`;
+        } catch(e) {}
+    }
+
+    async function loadHistory() {
+        const panel = document.getElementById('historyContent');
+        try {
+            const res = await fetch('/api/history');
+            const logs = await res.json();
+            panel.innerHTML = logs.map(l => `
+                <div class="history-item">
+                    <span class="history-del" onclick="deleteHistory('${l._id}')">✕</span>
+                    <div class="time">${new Date(l.timestamp).toLocaleTimeString()}</div>
+                    <div class="q">${l.userQuestion}</div>
+                    <div class="cost">Usage: ${l.totalTokens || 0} tokens ($${(l.costUSD || 0).toFixed(6)})</div>
+                </div>
+            `).join('') || '<p style="text-align:center; color:#64748b; font-size:12px; margin-top:20px;">No recent queries.</p>';
+        } catch(e) {}
+    }
+
+    async function deleteHistory(id) {
+        if (!confirm("Remove this entry?")) return;
+        await fetch('/api/history/' + id, { method: 'DELETE' });
+        loadHistory();
+    }
+
+    async function clearHistory() {
+        if (!confirm("Clear all visible history? (Audit log remains safe)")) return;
+        await fetch('/api/history/clear', { method: 'POST' });
+        loadHistory();
+    }
+
     async function doInit() {
         const btn = document.getElementById('btnInit');
+        const overlay = document.getElementById('loadingOverlay');
         const status = document.getElementById('initStatus');
+        
         btn.disabled = true;
-        status.style.display = 'block';
-        status.className = 'status status-info';
-        status.innerText = '⏳ Connecting & running AI Schema Analyzer... (30-60s)';
-
+        overlay.style.display = 'flex';
+        
         try {
             const res = await fetch('/api/init', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    targetDatabaseUri: buildUri(),
-                    targetDatabaseType: document.getElementById('targetDatabaseType').value,
+                    targetDatabaseUri: getUri(),
+                    targetDatabaseType: 'mongodb',
                     cloudApiKey: document.getElementById('cloud_k').value,
                     selectedAiModel: document.getElementById('selectedAiModel').value,
                     requireUserApproval: document.getElementById('require_human').checked
@@ -235,87 +391,86 @@
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            
-            status.className = 'status status-ok';
-            status.innerText = '✅ Schema Discovery Complete!';
-            
-            const badgeText = `${document.getElementById('targetDatabaseType').value.toUpperCase()} | ${document.getElementById('selectedAiModel').value.toUpperCase()}`;
-            document.getElementById('envBadge').innerText = badgeText;
-            document.getElementById('envBadge2').innerText = badgeText;
 
+            document.getElementById('currentConfig').innerText = `Connected: MongoDB | ${document.getElementById('selectedAiModel').options[document.getElementById('selectedAiModel').selectedIndex].text}`;
             await loadSchema();
-            setTimeout(() => goPage(2), 800);
-        } catch (e) {
+            setTimeout(() => { overlay.style.display = 'none'; goPage(2); }, 800);
+        } catch(e) {
+            overlay.style.display = 'none';
+            status.style.display = 'block';
             status.className = 'status status-err';
-            status.innerText = '❌ Error: ' + e.message;
-        } finally {
+            status.innerText = 'Initialization Error: ' + e.message;
             btn.disabled = false;
         }
     }
 
     async function loadSchema() {
+        const res = await fetch('/api/metadata');
+        const data = await res.json();
         const list = document.getElementById('schemaList');
-        list.innerHTML = '<p>Loading mappings...</p>';
-        try {
-            const res = await fetch('/api/metadata');
-            const data = await res.json();
-            list.innerHTML = '';
-            data.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'col-card';
-                card.innerHTML = `
+        list.innerHTML = data.map(item => `
+            <div class="col-card" style="${item.isBlacklisted ? 'opacity: 0.6; border-color: #450a0a;' : ''}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h4>📄 ${item.collectionName}</h4>
-                    <label>Business Purpose</label>
-                    <textarea id="bus_${item._id}" rows="2">${item.businessPurpose || ''}</textarea>
-                    
-                    <label>Technical Schema (Fields)</label>
-                    <textarea id="tech_${item._id}" rows="4" style="font-family:monospace; font-size:12px;">${item.techSchema || ''}</textarea>
-                    
-                    <label>Deep Description (Keys & Nesting)</label>
-                    <textarea id="desc_${item._id}" rows="3">${item.schemaDescription || ''}</textarea>
-
-                    <div class="row">
-                        <div><label>Related to</label><input type="text" id="rel_${item._id}" value="${(item.relatedCollections||[]).join(', ')}"></div>
-                        <div style="flex:0.4"><label>Row Limit</label><input type="number" id="lim_${item._id}" value="${item.limitSize || 50}"></div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:11px; color:#ef4444; font-weight:700;">BLACKLIST</span>
+                        <label class="toggle" style="margin:0;"><input type="checkbox" id="blk_${item._id}" ${item.isBlacklisted ? 'checked' : ''}><span class="slider"></span></label>
                     </div>
-                    <button class="btn btn-green" style="margin-top:15px; padding:6px 15px; font-size:12px;" onclick="saveCol('${item._id}')">Update Mapping</button>
-                    <span id="ss_${item._id}" style="margin-left:10px; font-size:12px; color:#10b981;"></span>
-                `;
-                list.appendChild(card);
-            });
-        } catch (e) {
-            list.innerHTML = '<p style="color:#ef4444">Failed to load schema.</p>';
-        }
+                </div>
+                <div class="row">
+                    <div style="flex:2">
+                        <label>Business Context (Chinese)</label>
+                        <textarea id="bus_${item._id}" rows="3">${item.businessPurpose || ''}</textarea>
+                    </div>
+                    <div>
+                        <label>Row Protection Limit</label>
+                        <input type="number" id="lim_${item._id}" value="${item.limitSize || 50}">
+                    </div>
+                </div>
+                <label>Technical Fields & Types</label>
+                <textarea id="tech_${item._id}" rows="5" style="font-family:monospace; font-size:12px;">${item.techSchema || ''}</textarea>
+                <label>Deep Narrative (Keys / Joins)</label>
+                <textarea id="desc_${item._id}" rows="3">${item.schemaDescription || ''}</textarea>
+                <button class="btn btn-green" style="margin-top:10px; padding:6px 15px; font-size:11px;" onclick="saveSchema('${item._id}')">Save Enrichment</button>
+            </div>
+        `).join('');
     }
 
-    async function saveCol(id) {
-        document.getElementById('ss_'+id).innerText = 'Saving...';
-        try {
-            await fetch('/api/metadata/' + id, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    businessPurpose: document.getElementById('bus_'+id).value,
-                    techSchema: document.getElementById('tech_'+id).value,
-                    schemaDescription: document.getElementById('desc_'+id).value,
-                    relatedCollections: document.getElementById('rel_'+id).value.split(',').map(s=>s.trim()).filter(Boolean),
-                    limitSize: parseInt(document.getElementById('lim_'+id).value) || 50
-                })
-            });
-            document.getElementById('ss_'+id).innerText = '✅ Saved';
-        } catch(e) { document.getElementById('ss_'+id).innerText = '❌ Failed'; }
+    async function saveSchema(id) {
+        const btn = event.target;
+        btn.innerText = "Saving...";
+        await fetch('/api/metadata/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                businessPurpose: document.getElementById('bus_'+id).value,
+                techSchema: document.getElementById('tech_'+id).value,
+                schemaDescription: document.getElementById('desc_'+id).value,
+                limitSize: parseInt(document.getElementById('lim_'+id).value) || 50,
+                isBlacklisted: document.getElementById('blk_'+id).checked
+            })
+        });
+        btn.innerText = "✅ Enrichment Saved";
+        if (document.getElementById('blk_'+id).checked) {
+            btn.closest('.col-card').style.opacity = '0.6';
+            btn.closest('.col-card').style.borderColor = '#450a0a';
+        } else {
+            btn.closest('.col-card').style.opacity = '1';
+            btn.closest('.col-card').style.borderColor = '#334155';
+        }
+        setTimeout(() => btn.innerText = "Save Enrichment", 1500);
     }
 
     async function doAsk() {
         const q = document.getElementById('question').value;
         if (!q) return;
-        const resBox = document.getElementById('askResult');
-        const appBox = document.getElementById('approvalBox');
-        const tech = document.getElementById('techContent');
         const btn = document.getElementById('btnAsk');
+        const resBox = document.getElementById('askResult');
+        const tech = document.getElementById('techContent');
+        const appBox = document.getElementById('approvalBox');
 
         btn.disabled = true;
-        resBox.innerHTML = '<div class="status status-info">⏳ DBPilot is thinking...</div>';
+        resBox.innerHTML = '<div class="status status-info pulse">🔍 AI is scanning the map and writing query...</div>';
         appBox.style.display = 'none';
         tech.innerHTML = `[INPUT]: ${q}\n[STATUS]: Generating query...`;
 
@@ -326,59 +481,68 @@
                 body: JSON.stringify({ question: q })
             });
             const data = await res.json();
-
+            
             if (data.status === 'PENDING_APPROVAL') {
-                resBox.innerHTML = '<div class="status" style="background:#422006; color:#fbbf24;">🔒 Query generated. Please review in the Technical Console.</div>';
-                tech.innerHTML = `[GENERATED QUERY]:\n\n${data.query}\n\n[STATUS]: Waiting for user approval.`;
+                resBox.innerHTML = '<div class="status" style="background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; color:#facc15;">Query logic ready. Technical Console updated. Waiting for signature.</div>';
+                tech.innerHTML = `[PROPOSED QUERY]:\n\n${data.query}\n\n[ESTIMATED COST]: $${(data.costUSD || 0).toFixed(6)}`;
                 document.getElementById('pendingQueryId').value = data.queryId;
                 appBox.style.display = 'block';
+                document.getElementById('btnExecute').disabled = false;
             } else if (data.status === 'EXECUTED_SUCCESS') {
-                renderResponse(data);
+                renderResult(data);
             } else {
-                resBox.innerHTML = `<div class="status status-err">${data.error || 'Unknown Error'}</div>`;
+                resBox.innerHTML = `<div class="status status-err">${data.message || data.error}</div>`;
             }
-        } catch (e) {
+        } catch(e) {
             resBox.innerHTML = `<div class="status status-err">${e.message}</div>`;
         } finally {
             btn.disabled = false;
+            updateCost();
+            loadHistory();
         }
     }
 
-    function renderResponse(data) {
-        const box = document.getElementById('askResult');
+    function renderResult(data) {
+        const resBox = document.getElementById('askResult');
         const tech = document.getElementById('techContent');
-        
-        box.innerHTML = `
+        resBox.innerHTML = `
             <div class="summary-card">
-                <h4>Assistant Analysis</h4>
-                <p>${data.summary || 'Query executed successfully.'}</p>
+                <h4>AI Insights Output</h4>
+                <p>${data.summary || 'Database returned results successfully.'}</p>
+                <div style="margin-top:15px; font-size:11px; color:#93c5fd; border-top: 1px solid rgba(147, 197, 253, 0.3); padding-top: 10px;">
+                    Cost: $${(data.costUSD || 0).toFixed(6)} | Tokens: ${data.totalTokens || 0}
+                </div>
             </div>
         `;
-        
-        tech.innerHTML = `[SUCCESS]\n[RECORDS]: ${data.data?.length || 0}\n\n[RAW DATA]:\n${JSON.stringify(data.data, null, 2)}`;
+        tech.innerHTML = `[SUCCESS]\n[RECORDS]: ${data.data?.length || 0}\n\n[RAW DATA JSON]:\n${JSON.stringify(data.data, null, 2)}`;
     }
 
     async function doExecute() {
         const id = document.getElementById('pendingQueryId').value;
-        const box = document.getElementById('askResult');
-        const tech = document.getElementById('techContent');
-
-        document.getElementById('approvalBox').style.display = 'none';
-        box.innerHTML = '<div class="status status-info">⏳ Executing & Summarizing...</div>';
-        tech.innerHTML += `\n\n[ACTION]: Executing approved query...`;
+        const btn = document.getElementById('btnExecute');
+        const resBox = document.getElementById('askResult');
+        
+        btn.disabled = true;
+        btn.innerText = "Executing On-Chain...";
+        resBox.innerHTML = '<div class="status status-info pulse">⚡ Confirming signature and pulling data...</div>';
 
         try {
             const res = await fetch('/api/execute/' + id, { method: 'POST' });
             const data = await res.json();
-            renderResponse(data);
-        } catch (e) {
-            box.innerHTML = `<div class="status status-err">${e.message}</div>`;
+            renderResult(data);
+        } catch(e) {
+            resBox.innerHTML = `<div class="status status-err">${e.message}</div>`;
+        } finally {
+            document.getElementById('approvalBox').style.display = 'none';
+            btn.innerText = "Execute Proposed Query";
+            updateCost();
+            loadHistory();
         }
     }
 
     function doReject() {
         document.getElementById('approvalBox').style.display = 'none';
-        document.getElementById('askResult').innerHTML = '<div class="status status-err">🚫 Execution rejected by user.</div>';
+        document.getElementById('askResult').innerHTML = '<div class="status status-err">Terminated. User rejected the query.</div>';
     }
 </script>
 </body>

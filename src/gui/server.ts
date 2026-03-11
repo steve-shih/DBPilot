@@ -94,6 +94,46 @@ app.post('/api/execute/:queryId', async (req, res) => {
     }
 });
 
+// ==================== API: History & Stats ====================
+app.get('/api/history', async (_req, res) => {
+    try {
+        const logs = await AuditLog.find({ deleted: { $ne: true } }).sort({ timestamp: -1 }).limit(10);
+        res.json(logs);
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.delete('/api/history/:id', async (req, res) => {
+    try {
+        await AuditLog.findByIdAndUpdate(req.params.id, { deleted: true });
+        res.json({ success: true });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/history/clear', async (_req, res) => {
+    try {
+        await AuditLog.updateMany({ deleted: { $ne: true } }, { deleted: true });
+        res.json({ success: true });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/api/stats/cost', async (_req, res) => {
+    try {
+        const result = await AuditLog.aggregate([
+            { $match: { deleted: { $ne: true } } },
+            { $group: { _id: null, totalCost: { $sum: "$costUSD" } } }
+        ]);
+        res.json({ totalCost: result[0]?.totalCost || 0 });
+    } catch (e) {
+        res.json({ totalCost: 0 });
+    }
+});
+
 // ==================== API: Metadata CRUD ====================
 app.get('/api/metadata', async (_req, res) => {
     try {

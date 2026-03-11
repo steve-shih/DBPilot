@@ -37,14 +37,22 @@ export class DBPilotCore {
   }
 
   async ask(question: string): Promise<any> {
-    const metadatas = await CollectionMetadata.find().lean();
+    const metadatas = await CollectionMetadata.find({ isBlacklisted: { $ne: true } }).lean();
     let generatedQuery = '';
     let errorMessage = '';
     let guardError: string | null = null;
+    let totalInput = 0;
+    let totalOutput = 0;
+    let totalCost = 0;
     
     for (let i = 0; i < 3; i++) {
         try {
-            generatedQuery = await this.orchestrator.generateQuery(question, metadatas);
+            const { query, usage } = await this.orchestrator.generateQuery(question, metadatas);
+            generatedQuery = query;
+            totalInput += usage.inputTokens;
+            totalOutput += usage.outputTokens;
+            totalCost += usage.costUSD;
+
             guardError = await QueryGuard.validate(generatedQuery);
             if (!guardError) break; 
         } catch (e: any) {
@@ -55,16 +63,20 @@ export class DBPilotCore {
     const log = await AuditLog.create({
       userQuestion: question,
       generatedQuery: generatedQuery,
-      status: this.reqApproval ? 'PENDING_APPROVAL' : (guardError ? 'BLOCKED' : 'EXECUTED_SUCCESS')
+      status: this.reqApproval ? 'PENDING_APPROVAL' : (guardError ? 'BLOCKED' : 'EXECUTED_SUCCESS'),
+      inputTokens: totalInput,
+      outputTokens: totalOutput,
+      totalTokens: totalInput + totalOutput,
+      costUSD: totalCost
     });
 
     if (guardError) {
        await AuditLog.findByIdAndUpdate(log._id, { status: 'BLOCKED', resultSummary: { error: guardError } });
-       return { status: 'BLOCKED', message: guardError, query: generatedQuery };
+       return { status: 'BLOCKED', message: guardError, query: generatedQuery, costUSD: totalCost };
     }
 
     if (this.reqApproval) {
-       return { status: 'PENDING_APPROVAL', queryId: log._id, query: generatedQuery };
+       return { status: 'PENDING_APPROVAL', queryId: log._id, query: generatedQuery, costUSD: totalCost, totalTokens: totalInput + totalOutput };
     } else {
        return await this.executeApprovedQuery(log._id.toString());
     }
@@ -82,14 +94,22 @@ export class DBPilotCore {
         const data = await QueryRunner.execute(this.targetDb.getDb(), enforcedQuery);
         
         // New: Summarize results using LLM
-        const summary = await this.orchestrator.summarizeData(log.userQuestion, data);
+        const { summary, usage } = await this.orchestrator.summarizeData(log.userQuestion, data);
+
+        const finalInput = (log.inputTokens || 0) + usage.inputTokens;
+        const finalOutput = (log.outputTokens || 0) + usage.outputTokens;
+        const finalCost = (log.costUSD || 0) + usage.costUSD;
 
         await AuditLog.findByIdAndUpdate(queryId, { 
            status: 'EXECUTED_SUCCESS', 
-           resultSummary: { count: Array.isArray(data) ? data.length : 1, summary } 
+           resultSummary: { count: Array.isArray(data) ? data.length : 1, summary } ,
+           inputTokens: finalInput,
+           outputTokens: finalOutput,
+           totalTokens: finalInput + finalOutput,
+           costUSD: finalCost
         });
 
-        return { status: 'EXECUTED_SUCCESS', data, summary };
+        return { status: 'EXECUTED_SUCCESS', data, summary, costUSD: finalCost, totalTokens: finalInput + finalOutput };
     } catch (e: any) {
         await AuditLog.findByIdAndUpdate(queryId, { status: 'ERROR', resultSummary: { error: e.message } });
         return { status: 'ERROR', error: e.message };

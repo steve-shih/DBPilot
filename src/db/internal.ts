@@ -26,6 +26,7 @@ export interface ICollectionMetadata extends Document {
   relatedCollections: string[];
   forbiddenSyntax: string[];
   limitSize: number;
+  isBlacklisted: boolean;
 }
 
 const CollectionMetadataSchema = new Schema<ICollectionMetadata>({
@@ -35,7 +36,8 @@ const CollectionMetadataSchema = new Schema<ICollectionMetadata>({
   schemaDescription: { type: String, default: '' },
   relatedCollections: { type: [String], default: [] },
   forbiddenSyntax: { type: [String], default: ['delete', 'update', 'insert', 'drop', 'aggregate'] },
-  limitSize: { type: Number, default: 50 }
+  limitSize: { type: Number, default: 50 },
+  isBlacklisted: { type: Boolean, default: false }
 });
 
 export const CollectionMetadata = mongoose.models.CollectionMetadata || mongoose.model<ICollectionMetadata>('CollectionMetadata', CollectionMetadataSchema);
@@ -46,6 +48,11 @@ export interface IAuditLog extends Document {
   generatedQuery: string;
   status: 'PENDING_APPROVAL' | 'EXECUTED_SUCCESS' | 'BLOCKED' | 'ERROR';
   resultSummary?: any;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  costUSD?: number;
+  deleted: boolean;
 }
 
 const AuditLogSchema = new Schema<IAuditLog>({
@@ -53,7 +60,12 @@ const AuditLogSchema = new Schema<IAuditLog>({
   userQuestion: { type: String, required: true },
   generatedQuery: { type: String, default: '' },
   status: { type: String, enum: ['PENDING_APPROVAL', 'EXECUTED_SUCCESS', 'BLOCKED', 'ERROR'], required: true },
-  resultSummary: { type: Schema.Types.Mixed }
+  resultSummary: { type: Schema.Types.Mixed },
+  inputTokens: { type: Number, default: 0 },
+  outputTokens: { type: Number, default: 0 },
+  totalTokens: { type: Number, default: 0 },
+  costUSD: { type: Number, default: 0 },
+  deleted: { type: Boolean, default: false }
 });
 
 export const AuditLog = mongoose.models.AuditLog || mongoose.model<IAuditLog>('AuditLog', AuditLogSchema);
