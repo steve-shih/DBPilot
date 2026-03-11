@@ -85,6 +85,28 @@ graph TD
 
 ---
 
+## 🌟 Use Cases & Example Results (使用情境與回覆示例)
+
+- **Data Analysts / 數據分析師**: 
+  - 💬 *Ask*: "Identify high-value users who haven't made a purchase in 3 months."
+  - 🤖 *AI*: "Found 12 VIP users. Top candidates: John Doe ($4,500 total spend), Alice Smith ($3,200)."
+  - 💬 *問*: 「找出過去 3 個月內沒有消費的高價值使用者。」
+  - 🤖 *答*: 「找到 12 位 VIP 使用者。主要對象：張曉明（累計 $4,500）、李美玲（累計 $3,200）。」
+
+- **Developers / 工程師**: 
+  - 💬 *Ask*: "Verify the structure of nested audit logs in the latest user sessions."
+  - 🤖 *AI*: "Retrieved session `S789`. Structure confirmed: `metadata` contains `geo_ip` and `browser_agent` objects."
+  - 💬 *問*: 「檢查最新使用者工作階段中，巢狀稽核紀錄的結構內容。」
+  - 🤖 *答*: 「已讀取工作階段 `S789`。結構已確認：`metadata` 欄位包含 `geo_ip` 與 `browser_agent` 巢狀物件。」
+
+- **Customer Service / 客服團隊**: 
+  - 💬 *Ask*: "Check the subscription status for user ID `U12345`."
+  - 🤖 *AI*: "`U12345` has an **Active** Pro subscription. Last login: 2024-03-10."
+  - 💬 *問*: 「查詢使用者 `U12345` 的目前訂閱狀態。」
+  - 🤖 *答*: 「使用者 `U12345` 的 Pro 訂閱狀態目前為 **啟用中**。最後登入時間：2024-03-10。」
+
+---
+
 ## 🛠 Quick Start (快速開始)
 
 ### 0️⃣ Prerequisites (前置準備)
