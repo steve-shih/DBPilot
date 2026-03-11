@@ -1,5 +1,5 @@
 import { TargetDB } from '../db/target';
-import { CollectionMetadata } from '../db/internal';
+import { CollectionMetadata, AuditLog } from '../db/internal';
 import { LLMOrchestrator } from './LLMOrchestrator';
 
 export class SchemaExplorer {
@@ -57,7 +57,6 @@ export class SchemaExplorer {
         });
 
         // New: Persist exploration cost to audit log so it shows up in dashboard
-        const { AuditLog } = require('../db/internal');
         await AuditLog.create({
           userQuestion: `[SYSTEM] Exploration: ${colName}`,
           status: 'EXECUTED_SUCCESS',

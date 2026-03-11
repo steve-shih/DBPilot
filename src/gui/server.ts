@@ -122,18 +122,6 @@ app.post('/api/history/clear', async (_req, res) => {
     }
 });
 
-app.get('/api/stats/cost', async (_req, res) => {
-    try {
-        const result = await AuditLog.aggregate([
-            { $match: { deleted: { $ne: true } } },
-            { $group: { _id: null, totalCost: { $sum: "$costUSD" } } }
-        ]);
-        res.json({ totalCost: result[0]?.totalCost || 0 });
-    } catch (e) {
-        res.json({ totalCost: 0 });
-    }
-});
-
 app.post('/api/config', async (req, res) => {
     try {
         const { apiKey, aiModel } = req.body;

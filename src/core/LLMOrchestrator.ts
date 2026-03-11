@@ -24,10 +24,13 @@ export class LLMOrchestrator {
 
   private calculateCost(model: string, inputTokens: number, outputTokens: number): number {
     const m = model.toLowerCase();
+    const i = Number(inputTokens) || 0;
+    const o = Number(outputTokens) || 0;
+
     // Current rough pricing per 1M tokens (Sonnet 3.5: $3/$15, GPT-4o: $5/$15, 4o-mini: $0.15/$0.6)
-    if (m.includes('claude-3-5-sonnet')) return (inputTokens * 3 / 1000000) + (outputTokens * 15 / 1000000);
-    if (m.includes('gpt-4o-mini')) return (inputTokens * 0.15 / 1000000) + (outputTokens * 0.6 / 1000000);
-    if (m.includes('gpt-4o')) return (inputTokens * 5 / 1000000) + (outputTokens * 15 / 1000000);
+    if (m.includes('claude-3-5-sonnet')) return (i * 3 / 1000000) + (o * 15 / 1000000);
+    if (m.includes('gpt-4o-mini')) return (i * 0.15 / 1000000) + (o * 0.6 / 1000000);
+    if (m.includes('gpt-4o')) return (i * 5 / 1000000) + (o * 15 / 1000000);
     return 0; // Local or unknown models
   }
 

@@ -106,8 +106,6 @@
 </head>
 <body>
 
-<div id="costDisplay">Total Cost: $0.0000</div>
-
 <!-- Loading Overlay -->
 <div id="loadingOverlay" class="loading-overlay">
     <div class="spinner"></div>
@@ -314,7 +312,6 @@ console.log(response.summary);
         document.getElementById('historyFab').style.display = fabDisplay;
         
         if (n === 3) {
-            updateCost();
             loadHistory();
         }
     }
@@ -401,14 +398,6 @@ console.log(response.summary);
     }
 
     // ========= APIs =========
-    async function updateCost() {
-        try {
-            const res = await fetch('/api/stats/cost');
-            const data = await res.json();
-            document.getElementById('costDisplay').innerText = `Total Session Cost: $${(data.totalCost || 0).toFixed(6)}`;
-        } catch(e) {}
-    }
-
     async function loadHistory() {
         const panel = document.getElementById('historyContent');
         try {
@@ -419,7 +408,6 @@ console.log(response.summary);
                     <span class="history-del" onclick="deleteHistory('${l._id}')">✕</span>
                     <div class="time">${new Date(l.timestamp).toLocaleTimeString()}</div>
                     <div class="q">${l.userQuestion}</div>
-                    <div class="cost">Usage: ${l.totalTokens || 0} tokens ($${(l.costUSD || 0).toFixed(6)})</div>
                 </div>
             `).join('') || '<p style="text-align:center; color:#64748b; font-size:12px; margin-top:20px;">No recent queries.</p>';
         } catch(e) {}
@@ -577,13 +565,10 @@ console.log(response.summary);
                 status.innerHTML = `
                     <div class="status" style="background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; color:#facc15; margin-top:0;">
                         Query logic ready. Waiting for signature.
-                        <div style="font-size:10px; color:#94a3b8; margin-top:5px; border-top:1px solid rgba(234,179,8,0.2); padding-top:4px;">
-                            Draft Cost: $${(data.costUSD || 0).toFixed(6)}
-                        </div>
                     </div>`;
                 chat.appendChild(status);
                 
-                tech.innerHTML = `[PROPOSED QUERY]:\n\n${data.query}\n\n[ESTIMATED COST]: $${(data.costUSD || 0).toFixed(6)}`;
+                tech.innerHTML = `[PROPOSED QUERY]:\n\n${data.query}`;
                 document.getElementById('pendingQueryId').value = data.queryId;
                 appBox.style.display = 'block';
                 document.getElementById('btnExecute').disabled = false;
@@ -595,9 +580,6 @@ console.log(response.summary);
                 blo.innerHTML = `
                     <div class="status status-err" style="margin-top:0;">
                         ${data.message || 'Query Blocked'}
-                        <div style="font-size:10px; color:#fca5a5; margin-top:5px; border-top:1px solid rgba(252,165,165,0.2); padding-top:4px;">
-                            Interaction Cost: $${(data.costUSD || 0).toFixed(6)}
-                        </div>
                     </div>`;
                 chat.appendChild(blo);
             } else {
@@ -614,7 +596,6 @@ console.log(response.summary);
         } finally {
             btn.disabled = false;
             autoScroll();
-            updateCost();
             loadHistory();
         }
     }
@@ -630,9 +611,6 @@ console.log(response.summary);
             <div class="summary-card" style="margin-bottom:0;">
                 <h4>AI Insights Output</h4>
                 <p>${data.summary || 'Database returned results successfully.'}</p>
-                <div style="margin-top:15px; font-size:11px; color:#93c5fd; border-top: 1px solid rgba(147, 197, 253, 0.3); padding-top: 10px;">
-                    Cost: $${(data.costUSD || 0).toFixed(6)} | Tokens: ${data.totalTokens || 0}
-                </div>
             </div>
         `;
         chat.appendChild(aiMsg);
@@ -669,7 +647,6 @@ console.log(response.summary);
         } finally {
             document.getElementById('approvalBox').style.display = 'none';
             btn.innerText = "Execute Proposed Query";
-            updateCost();
             loadHistory();
         }
     }
@@ -682,6 +659,8 @@ console.log(response.summary);
         err.innerHTML = '<div class="status status-err" style="margin-top:0;">Terminated. User rejected the query.</div>';
         chat.appendChild(err);
         autoScroll();
+        updateCost();
+        loadHistory();
     }
 </script>
 </body>
