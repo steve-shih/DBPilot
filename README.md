@@ -1,223 +1,140 @@
-🚀 DBPilot V3
-AI Database Co-Pilot | 自然語言查詢資料庫
-🚀 DBPilot V3
-AI 資料庫副駕駛（Natural Language Database Query）
+# 🚀 DBPilot V3
+AI-Powered Natural Language Database Query Co-Pilot | 自然語言資料庫查詢副駕駛
 
-DBPilot 是一個 AI 驅動的資料庫查詢工具，讓使用者可以透過 自然語言 直接查詢資料庫，而不需要撰寫複雜的查詢語法。
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
+![AI Models](https://img.shields.io/badge/AI-Claude%20%7C%20GPT%20%7C%20Ollama-blueviolet?style=for-the-badge)
 
-系統會將使用者問題轉換為安全的資料庫查詢，並回傳整理好的結果。
-🎬 Demo
+DBPilot translates **Natural Language** into safe, optimized database queries. It bridges the gap between complex data structures and non-technical stakeholders, significantly **reducing the burden on Developers and Customer Service teams**.
 
-⚠️ This project is ~95% generated using Claude & GPT
+DBPilot 將 **自然語言** 轉換為安全、優化的資料庫查詢。它消除了複雜資料結構與非技術人員之間的溝通障礙，顯著 **減輕開發端與客服團隊的負擔**。
 
-https://www.youtube.com/watch?v=xbvpvycP0N8
-目前支援：
+---
 
-MongoDB
+# 🎬 DEMO 影片示範
+### [點此觀看 Demo 影片 / Watch Demo on YouTube](https://www.youtube.com/watch?v=xbvpvycP0N8)
 
-未來可擴充至其他資料庫。
+---
 
-✨ 主要功能
-🧠 AI Schema 理解
+## 🏗 System Architecture (系統架構)
 
-系統會自動分析資料樣本並生成：
+```mermaid
+graph TD
+    User((User / App)) 
+    
+    subgraph DBPilot_Interface [Interface Layer / 介面層]
+        GUI[Web GUI Interface]
+        SDK[SDK / Library]
+    end
 
-Collection 商業用途說明
+    subgraph DBPilot_Core [Core Engine / 核心引擎]
+        Orchestrator[LLM Orchestrator]
+        Explorer[Schema Explorer]
+        Guard[Query Guardrail]
+        Runner[Query Runner]
+    end
 
-欄位型別與資料意義
+    subgraph Storage [Storage Layer / 儲存層]
+        InternalDB[(Internal Meta DB)]
+        TargetDB[(Target App DB)]
+    end
 
-巢狀結構與關聯鍵理解
+    subgraph AI_Services [AI Providers / AI 服務]
+        Claude[Anthropic Claude]
+        GPT[OpenAI GPT]
+        Local[Local Ollama / 私有化模型]
+    end
 
-🛡️ 查詢安全機制
+    User --> GUI
+    User --> SDK
+    GUI & SDK --> Orchestrator
+    Orchestrator --> Explorer
+    Orchestrator <--> AI_Services
+    Explorer --> TargetDB
+    Explorer --> InternalDB
+    Orchestrator --> Guard
+    Guard --> Runner
+    Runner --> TargetDB
+    Runner --> User
+```
 
-提供多層安全保護：
+---
 
-禁用危險語法
-delete
-drop
+## ✨ Key Features (主要功能)
 
-每次查詢筆數限制
+### 🧠 Intelligent Schema Mapping (AI 結構理解)
+- **EN**: Automatically analyzes collections, relationships, and types to build a semantic map.
+- **ZH**: 自動分析資料庫結構、關聯鍵與資料型別，為 AI 生成精準的商業邏輯地圖。
 
-Collection 黑名單
+### 🛡 Multi-Layer Guardrails (多層安全防護)
+- **EN**: Blocks destructive operations (delete, drop), enforces limits, and supports blacklisting.
+- **ZH**: 內建危險語法攔截（刪除、刪庫）、強迫回傳筆數限制、以及敏感集合黑名單。
 
-可設定 執行前人工確認
+### 📖 Unified Dialogue History (對話流歷史)
+- **EN**: Modern chat-like interface that persists history downwards with soft-delete support.
+- **ZH**: 現代化對話式介面，支援歷史紀錄向下延伸保存，並提供 UI 軟刪除與後端完整追蹤。
 
-💰 AI 成本追蹤
+### 🔌 Dual Integration (雙模式接入)
+- **Standalone GUI**: Wizard-style web interface. / 導引式網頁介面。
+- **Native SDK**: Embed directly into Node.js apps. / 直接嵌入 Node.js/TS 專案。
 
-系統會即時計算：
+### 🏠 Local AI Support (支援 Ollama)
+- **EN**: Connect to local models via **Ollama** for 100% data privacy and no API costs.
+- **ZH**: 支援透過 **Ollama** 連接本地模型，確保 100% 資料隱私並節省 API 費用。
 
-Token 使用量
+---
 
-API 成本 (USD)
+## 🛠 Quick Start (快速開始)
 
-方便追蹤 AI 使用費用。
+### 0️⃣ Prerequisites (前置準備)
+> [!IMPORTANT]
+> **Privacy First**: DBPilot stores metadata locally. Use an internal MongoDB for audit logs.
+> **隱私優先**: DBPilot 會將結構元數據與稽核紀錄存在本地。請務必指定自己的內部 MongoDB。
 
-📖 查詢歷史紀錄
+1. **MongoDB** (127.0.0.1:27017) must be running. / 確保 MongoDB 已啟動。
+2. Install dependencies / 安裝套件:
+   ```bash
+   npm install
+   ```
 
-保存所有查詢紀錄
+### 1️⃣ Setup (設定)
+Create a `.env` file in the root / 建立 `.env` 檔案:
+```env
+ANTHROPIC_API_KEY=your_key
+OPENAI_API_KEY=your_key
+OLLAMA_BASE_URL=http://localhost:11434
+```
 
-支援 UI 清除歷史
-
-後端保留完整稽核紀錄
-
-🔌 雙模式使用
-
-DBPilot 可以兩種方式使用：
-
-Web GUI
-
-提供簡單的網頁操作介面。
-
-SDK
-
-可直接嵌入到企業系統中使用。
-
-🛠 快速開始
-1️⃣ 安裝套件
-npm install
-2️⃣ 設定環境變數
-
-建立 .env
-
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
-3️⃣ 啟動系統
+### 2️⃣ Run (啟動)
+```bash
 npm run gui
-4️⃣ 開啟介面
-http://localhost:4000
+```
+Open **[http://localhost:4000](http://localhost:4000)** and follow the wizard. / 開啟連結並依導引完成三步驟設定。
 
-依序完成：
+---
 
-1️⃣ 輸入資料庫連線
-2️⃣ 輸入 AI API Key
-3️⃣ 設定查詢安全規則
+## 📦 SDK Usage (SDK 使用範例)
 
-📦 SDK 使用範例
+```typescript
 import { DBPilotCore } from 'dbpilot';
 
 const pilot = new DBPilotCore({
   targetDatabaseUri: 'mongodb://127.0.0.1:27017/my_app',
-  cloudApiKey: process.env.ANTHROPIC_API_KEY,
-  selectedAiModel: 'claude',
-  requireUserApproval: false
+  requireUserApproval: true // Human-in-the-loop
 });
 
 await pilot.initialize();
 
-const result = await pilot.ask("找出消費超過 1000 元的 VIP 客戶");
-
+// Just ask! / 直接提問！
+const result = await pilot.ask("找出上個月消費超過 1000 元的客戶");
 console.log(result.summary);
-console.log(result.data);
-🏗 系統架構
+```
 
-核心框架：Node.js + TypeScript
+---
 
-內部資料庫：MongoDB
+## 🎬 Credits
+- ⚠️ This project is **~95% generated** using AI (Claude 3.5 Sonnet & GPT-4o).
 
-AI 模型：Claude / OpenAI / Ollama
-
-DBPilot is an AI-powered database exploration tool that allows users to query databases using natural language.
-
-Instead of writing complex queries, you can simply ask questions in plain language, and DBPilot will translate them into safe database queries.
-
-Currently supports MongoDB, with future support for additional databases.
-
-🎬 Demo
-
-⚠️ This project is ~95% generated using Claude & GPT
-
-https://www.youtube.com/watch?v=xbvpvycP0N8
-
-🌟 Features
-🧠 AI Schema Understanding
-
-Automatically analyzes database samples and generates:
-
-Business explanations
-
-Field mappings
-
-Nested structure understanding
-
-🛡️ Safety Guardrails
-
-Built-in protection system:
-
-Forbidden query syntax (delete, drop)
-
-Query row limits
-
-Collection access control
-
-Optional Human-in-the-loop approval
-
-💰 Real-time AI Cost Tracking
-
-Token usage monitoring
-
-Live USD cost calculation (not ready)
-
-Transparent AI usage
-
-📖 Query History
-
-Conversation history
-
-Audit logging
-
-Soft-delete UI with backend trace
-
-🔌 Dual Usage
-
-DBPilot supports two modes:
-
-Web GUI – Wizard-style interface
-
-SDK – Embed into your own systems
-
-🛠 Quick Start
-1️⃣ Install
-npm install
-2️⃣ Setup environment
-
-Create .env
-
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
-3️⃣ Run GUI
-npm run gui
-4️⃣ Open
-http://localhost:4000
-
-Follow the wizard:
-
-Database connection
-
-API key
-
-Query safety settings
-
-📦 SDK Example
-import { DBPilotCore } from 'dbpilot';
-
-const pilot = new DBPilotCore({
-  targetDatabaseUri: 'mongodb://127.0.0.1:27017/my_app',
-  cloudApiKey: process.env.ANTHROPIC_API_KEY,
-  selectedAiModel: 'claude',
-  requireUserApproval: false
-});
-
-await pilot.initialize();
-
-const result = await pilot.ask(
-  "Find VIP customers with spending above 1000"
-);
-
-console.log(result);
-🏗 Architecture
-
-Core: Node.js + TypeScript
-
-Database: MongoDB
-
-AI: Claude / OpenAI / Ollama
+---
+© 2026 DBPilot Open Source Project. All rights reserved.
