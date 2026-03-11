@@ -1,4 +1,4 @@
-# 🚀 DBPilot V3
+# 🚀 Querybridge-pilot V3
 AI-Powered Natural Language Database Query Co-Pilot | 自然語言資料庫查詢副駕駛
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
